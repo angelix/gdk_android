@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'com.blockstream.gdk'
+    compileSdk 33
+
+    defaultConfig {
+        minSdk 22
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = "11"
+        targetCompatibility = "11"
+    }
+}
+
+task fetchBinaries {
+    doFirst{
+        def jniLibs = new File('./src/main/jniLibs')
+        if (!jniLibs.exists()) {
+            exec {
+                workingDir '../'
+                commandLine './fetch_gdk_binaries.sh'
+            }
+        }else{
+            print "-- Skipped --"
+        }
+    }
+    outputs.upToDateWhen { false }
+}
+
+afterEvaluate {
+    android.libraryVariants.all { variant ->
+        variant.getPreBuildProvider().configure { dependsOn(fetchBinaries) }
+    }
+}
